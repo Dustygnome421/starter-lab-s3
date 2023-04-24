@@ -57,6 +57,14 @@ func CreateBucket(
 	bucketName string,
 ) {
 	// TODO: implement this method
+	if !BucketExists(bucketName) {
+		numberNodes := getNumberNodes()
+		for i := 0; i < numberNodes; i++ {
+			bucket := fmt.Sprintf("nodes/%d/%s", i, bucketName)
+			err := os.Mkdir(bucket, os.ModePerm)
+			checkError(err)
+		}
+	}
 }
 
 
