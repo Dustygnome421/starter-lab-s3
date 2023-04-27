@@ -33,16 +33,22 @@ the same time, then the client that requested to write first gets to write first
 func RequestWriteFile(bucketName string, fileName string, fileContents []byte) {
 	// TODO: implement this method
 
+	// lock file table
 	fileTableMutex.Lock()
+	// unlock file table upon function exit
 	defer fileTableMutex.Unlock()
 
+	// create bucket if it does not exist
 	if !BucketExists(bucketName) {
 		CreateBucket(bucketName)
 	}
 
+	// write file to each node
 	numberNodes := getNumberNodes()
 	version := time.Now()
+	// write to quorum
 	for i := 0; i < numberNodes; i++ {
+		// write file to node i
 		WriteNodeFile(i%getWriteQuorum(), bucketName, fileName, fileContents, version)
 	}
 
@@ -60,47 +66,53 @@ its action first. Perhaps implement a kind of scheduler?
 func RequestReadFile(bucketName string, fileName string) []byte {
 	// TODO: implement this method
 
+	// lock file table
 	fileTableMutex.Lock()
+	// unlock file table upon function exit
 	defer fileTableMutex.Unlock()
 
+	// check if bucket exists
 	if !BucketExists(bucketName) {
 		return []byte("Error")
 	}
 
-	
+	// read file from each node
 	numberNodes := getWriteQuorum()
-
+	
+	// sync.WaitGroup is used to wait for the program to finish all goroutines
 	responses := sync.WaitGroup{}
 	responses.Add(numberNodes)
 
+	// fileMap maps node index to file contents
 	fileMap := make(map[int][]byte)
+	// fileTime maps node index to file version
 	fileTime := make(map[int]time.Time)
+
+	// read from quorum
 	for i := 0; i < numberNodes; i++ {
-		go func(node int) {
+		go func(node int) {	
 			defer responses.Done()
+			// read file from node i
 			fileContents, version := ReadNodeFile(node, bucketName, fileName)
+			// add file contents to map
 			if (fileContents != nil) {
 				fileMap[node] = fileContents
 				fileTime[node] = version
 			}
 		}(i)
 	}
+	// wait for all goroutines to finish
 	responses.Wait()
 
-	// // check if all versions are the same
-	// i := 0
-	// for j := i + 1; j < numberNodes; j++ {
-	// 	if (fileTime[i] != fileTime[j]) {
-	// 		fmt.Println("Versions are not the same")
-	// 		return []byte("Error")
-	// 	}
-	// }
-
+	// check if all files are the same
 	var allResponses [][]byte
+	// add all responses to allResponses
 	for _, v := range fileMap {
 		allResponses = append(allResponses, v)
 	}
 
+	// check if all files are the same
+	// if all files are the same, return the file
 	return allResponses[0][:]
 
 }

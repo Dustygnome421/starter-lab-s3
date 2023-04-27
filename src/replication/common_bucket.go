@@ -57,9 +57,13 @@ func CreateBucket(
 ) {
 	// TODO: implement this method
 	if !BucketExists(bucketName) {
+		// create bucket in each node
+		// nodes/i/bucketName
 		numberNodes := getNumberNodes()
 		for i := 0; i < numberNodes; i++ {
+			// create bucket directory
 			bucket := fmt.Sprintf("nodes/%d/%s", i, bucketName)
+			// create bucket directory
 			err := os.Mkdir(bucket, os.ModePerm)
 			checkError(err)
 		}
@@ -85,18 +89,24 @@ func WriteNodeFile(
 ) int {
 	// TODO: implement this method.
 
+	// create bucket if it doesn't exist
 	bucket := fmt.Sprintf("nodes/%d/%s", nodeIndex, bucketName)
+	
+	// create file
 	filepath := fmt.Sprintf("%s/%s", bucket, fileName)
 	versionFilePath := fmt.Sprint(filepath, ".", version.Format("2006-01-02"))
 
+	// create file
 	file, err := os.Create(filepath)
 	checkError(err)
 
 	defer file.Close()
 
+	// write contents to file
 	bytesWritten, err := file.Write(contents)
 	checkError(err)
 
+	// write version to version file
 	versionFile, err := os.Create(versionFilePath)
 	checkError(err) // stuck here
 
@@ -105,7 +115,7 @@ func WriteNodeFile(
 	_, err = fmt.Fprintln(versionFile, version)
 	checkError(err)
 
-
+	// return number of bytes written
 	return bytesWritten
 }
 
@@ -121,13 +131,17 @@ func ReadNodeFile(
 ) ([]byte, time.Time) {
 	// TODO: implement this method.
 
+	// check if bucket exists
 	if !BucketExists(bucketName) {
 		return nil, time.Now()
 	}
 
+	// read file
+	// nodes/i/bucketName/fileName
 	bucket := fmt.Sprintf("nodes/%d/%s", nodeIndex, bucketName)
 	filepath := fmt.Sprintf("%s/%s", bucket, fileName)
 	
+	// open file
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, time.Now()
@@ -135,13 +149,16 @@ func ReadNodeFile(
 
 	defer file.Close()
 
+	// read file contents stats
 	fileInfo, err := file.Stat()
 	checkError(err)
 
+	// read file contents
 	content := make([]byte, fileInfo.Size())
 	_, err = file.Read(content)
 	checkError(err)
 
+	// return file contents and version
 	return content, fileInfo.ModTime().Round(time.Second)
 }
 
