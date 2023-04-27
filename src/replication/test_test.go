@@ -236,9 +236,13 @@ func TestFaultyNode(t *testing.T) {
 		failedNodePath := fmt.Sprintf("nodes/%d/test5_bucket/test5.txt", rand.Intn(5))
 		if _, err := os.Stat(failedNodePath); !errors.Is(err, os.ErrNotExist) {
 			err := os.Remove(failedNodePath)
+			fmt.Println("Removed file")
 			checkError(err)
+			fmt.Println("Removed file")
 		}
+		fmt.Println("Reading file")
 		resultChannel <- RequestReadFile(bucketName, fileName)
+		fmt.Println("Read file")
 	}()
 	result := <-resultChannel
 

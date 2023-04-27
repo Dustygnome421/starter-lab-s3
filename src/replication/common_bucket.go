@@ -33,8 +33,6 @@ func ResetNodes() {
 	checkError(err)
 }
 
-
-
 /*
 BucketExists determines if the specified bucket exists
 */
@@ -131,7 +129,9 @@ func ReadNodeFile(
 	filepath := fmt.Sprintf("%s/%s", bucket, fileName)
 	
 	file, err := os.Open(filepath)
-	checkError(err)
+	if err != nil {
+		return nil, time.Now()
+	}	
 
 	defer file.Close()
 
@@ -141,25 +141,6 @@ func ReadNodeFile(
 	content := make([]byte, fileInfo.Size())
 	_, err = file.Read(content)
 	checkError(err)
-
-	// versionFile := fmt.Sprintf("%s.%s", filepath, fileInfo.ModTime().Format("2006-01-02"))
-	// fmt.Println("Version file path", versionFile)
-
-	
-	// version, err := os.Open(versionFile)
-	// checkError(err)
-	// defer version.Close()
-
-	// versionInfo, err := version.Stat()
-	// checkError(err)
-
-	// versionContent := make([]byte, versionInfo.Size())
-	// _, err = version.Read(versionContent)
-	// checkError(err)
-
-	// t, err := time.Parse("2023-04-26 20:29:21.062439 -0400 EDT m=+0.019485301", string(versionContent))
-	// checkError(err)
-	// t = t.Add(time.Hour * 24)
 
 	return content, fileInfo.ModTime().Round(time.Second)
 }
