@@ -6,15 +6,16 @@ import (
 	"os"
 	"time"
 )
+
 /*
 TODO: implement the methods at the bottom of this file.
- */
+*/
 
 /*
 InitializeNodes creates folders for each "node" computer in the mini-S3 system.
 
 File directory will be /src/replication/nodes/NODE_NUMBERS/BUCKET_NAME/FILENAME
- */
+*/
 func InitializeNodes(nodes int) {
 	setNumberNodes(nodes)
 	for i := 0; i < nodes; i++ {
@@ -85,8 +86,29 @@ func WriteNodeFile(
 	version time.Time,
 ) int {
 	// TODO: implement this method.
-	
-	return 0
+
+	bucket := fmt.Sprintf("nodes/%d/%s", nodeIndex, bucketName)
+	filepath := fmt.Sprintf("%s/%s", bucket, fileName)
+	versionFilePath := fmt.Sprint(filepath, ".", version.Format("2006-01-02"))
+
+	file, err := os.Create(filepath)
+	checkError(err)
+
+	defer file.Close()
+
+	bytesWritten, err := file.Write(contents)
+	checkError(err)
+
+	versionFile, err := os.Create(versionFilePath)
+	checkError(err) // stuck here
+
+	defer versionFile.Close()
+
+	_, err = fmt.Fprintln(versionFile, version)
+	checkError(err)
+
+
+	return bytesWritten
 }
 
 /*
@@ -101,6 +123,44 @@ func ReadNodeFile(
 ) ([]byte, time.Time) {
 	// TODO: implement this method.
 
-	return []byte("TODO"), time.Now()
+	if !BucketExists(bucketName) {
+		return nil, time.Now()
+	}
+
+	bucket := fmt.Sprintf("nodes/%d/%s", nodeIndex, bucketName)
+	filepath := fmt.Sprintf("%s/%s", bucket, fileName)
+	
+	file, err := os.Open(filepath)
+	checkError(err)
+
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	checkError(err)
+
+	content := make([]byte, fileInfo.Size())
+	_, err = file.Read(content)
+	checkError(err)
+
+	// versionFile := fmt.Sprintf("%s.%s", filepath, fileInfo.ModTime().Format("2006-01-02"))
+	// fmt.Println("Version file path", versionFile)
+
+	
+	// version, err := os.Open(versionFile)
+	// checkError(err)
+	// defer version.Close()
+
+	// versionInfo, err := version.Stat()
+	// checkError(err)
+
+	// versionContent := make([]byte, versionInfo.Size())
+	// _, err = version.Read(versionContent)
+	// checkError(err)
+
+	// t, err := time.Parse("2023-04-26 20:29:21.062439 -0400 EDT m=+0.019485301", string(versionContent))
+	// checkError(err)
+	// t = t.Add(time.Hour * 24)
+
+	return content, fileInfo.ModTime().Round(time.Second)
 }
 
