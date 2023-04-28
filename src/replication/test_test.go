@@ -50,29 +50,21 @@ func TestReadWriteOneClientOneNode(t *testing.T) {
 	setWriteQuorum(1) // just in case you're using this. not necessary to pass the test
 	setReadQuorum(1)
 	
-	fmt.Println("Testing ReadWriteOneClientOneNode")
-
 	bucketName := "test1_bucket"
 	fileName := "test1.txt"
 	contents, err := os.ReadFile("../main/test_simple.txt")
 	checkError(err)
 
-	fmt.Println("Creating bucket")
 
 	CreateBucket(bucketName)
 	resultChannel := make(chan []byte, 1) // output channel for client
 
-	fmt.Println("Creating goroutine")
 	// client 1
 	go func() {
-		fmt.Println("Requesting write")
 		RequestWriteFile(bucketName, fileName, contents) // stuck here
-		fmt.Println("Requesting read")
 		resultChannel <- RequestReadFile(bucketName, fileName)
 	}()
-	fmt.Println("Waiting for result")
 	result := <-resultChannel
-	fmt.Println("Got result")
 
 	// test writing file
 	if !filesEqual("../main/test_simple.txt", "nodes/0/test1_bucket/test1.txt") {
@@ -81,7 +73,6 @@ func TestReadWriteOneClientOneNode(t *testing.T) {
 
 	// test reading file
 	if !compareFileAndContents("../main/test_simple.txt", result) {
-		fmt.Printf("Contents: %s, filename: %s\n", string(result), fileName)
 		t.Fatal("main/test_simple.txt does not match result from write and read. RequestReadFileFailed.")
 	}
 }
@@ -152,13 +143,11 @@ func TestReadWriteOneClientTwoNodes(t *testing.T) {
 	result := <-resultChannel
 
 	// test writing file
-	fmt.Println("Testing file equality")
 	if !filesEqual("../main/test_simple.txt", "nodes/0/test3_bucket/test3.txt") {
 		t.Fatal("main/test_simple.txt does not equal nodes/0/test3_bucket/test1.txt. RequestWriteFile failed.")
 	}
 
 	// test reading file
-	fmt.Println("Testing file contents")
 	if !compareFileAndContents("../main/test_simple.txt", result) {
 		t.Fatal("main/test_simple.txt does not match result from write and read. RequestReadFileFailed.")
 	}
@@ -236,13 +225,9 @@ func TestFaultyNode(t *testing.T) {
 		failedNodePath := fmt.Sprintf("nodes/%d/test5_bucket/test5.txt", rand.Intn(5))
 		if _, err := os.Stat(failedNodePath); !errors.Is(err, os.ErrNotExist) {
 			err := os.Remove(failedNodePath)
-			fmt.Println("Removed file")
 			checkError(err)
-			fmt.Println("Removed file")
 		}
-		fmt.Println("Reading file")
 		resultChannel <- RequestReadFile(bucketName, fileName)
-		fmt.Println("Read file")
 	}()
 	result := <-resultChannel
 
